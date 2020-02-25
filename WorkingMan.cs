@@ -235,13 +235,17 @@ namespace Oxide.Plugins
                 string today = DateTime.Now.ToString("MM/dd/yyyy");
                 string week = WeekOfYear();
 
-                if(config.secondsPerDay > 0)
+                if(config.secondsPerDay > 0){
                     player.Message(string.Format("You have been playing for {0} in this 24-hour period ({1}), you have {2} left.", 
                         FormatTimeSpan((int)timeData[player.Id, today]), today, FormatTimeSpan(config.secondsPerDay - (int)timeData[player.Id, today])));
+                    player.Message(string.Format("There is {0} remaining until the next day cycle begins.", FormatTimeSpan((long)TimeTilNextDayCycle().TotalSeconds)));
+                }
 
-                if(config.secondsPerWeek > 0)
+                if(config.secondsPerWeek > 0){
                     player.Message(string.Format("You have been playing for {0} this week ({1}), you have {2} left.", 
                         FormatTimeSpan((int)timeData[player.Id, week]), week, FormatTimeSpan(config.secondsPerWeek - (int)timeData[player.Id, week])));
+                    player.Message(string.Format("There is {0} remaining until the next week cycle begins.", FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalSeconds)));
+                }
             }
             catch{
                 player.Message("Error handling checktimer command");
@@ -256,9 +260,27 @@ namespace Oxide.Plugins
             int firstDayWeek = cul.Calendar.GetWeekOfYear(    
                  DateTime.Now,    
                  CalendarWeekRule.FirstDay,    
-                 DayOfWeek.Monday);
+                 DayOfWeek.Thursday);
 
             return DateTime.Now.ToString("yyyy") + "-" + firstDayWeek.ToString();
+        }
+
+        public static DateTime GetNextWeekday(DateTime start, DayOfWeek day)
+        {
+            int daysToAdd = ((int) day - (int) start.DayOfWeek + 7) % 7;
+            return start.AddDays(daysToAdd);
+        }
+
+        private TimeSpan TimeTilNextWeekCycle()
+        {
+            TimeSpan untilMidnight = GetNextWeekday(DateTime.Today, DayOfWeek.Thursday) - DateTime.Now;
+            return untilMidnight;
+        }
+
+        private TimeSpan TimeTilNextDayCycle()
+        {
+            TimeSpan untilMidnight = DateTime.Today.AddDays (1.0) - DateTime.Now;
+            return untilMidnight;
         }
 
         private string FindPlayerIDByName(string name)
@@ -291,6 +313,17 @@ namespace Oxide.Plugins
             return answer;
         }
 
+        private string FormatTimeSpan2(long seconds)
+        {
+            TimeSpan t = TimeSpan.FromSeconds( seconds );
+            string answer = string.Format("{0:D2}d:{1:D2}h:{2:D2}m:{3:D2}s",
+                t.Days, 
+                t.Hours, 
+                t.Minutes, 
+                t.Seconds);
+            return answer;
+        }
+
         class PluginConfig
         {
             public long secondsPerDay { get; set; }
@@ -302,11 +335,11 @@ namespace Oxide.Plugins
         private void Init()
         {
             timeData = Interface.Oxide.DataFileSystem.GetDatafile("WorkingMan/timeData");
-            //timeData.Clear();
-            //timeData.Save();
             config = Config.ReadObject<PluginConfig>();
-            dayWarningThreshold1 = (int)Config["secondsPerDay"] - (int)Config["warningThreshold1"];
-            dayWarningThreshold2 = (int)Config["secondsPerDay"] - (int)Config["warningThreshold2"];
+            dayWarningThreshold1 = (int)config.secondsPerDay- (int)config.warningThreshold1;
+            dayWarningThreshold2 = (int)config.secondsPerDay - (int)config.warningThreshold2;
+            weekWarningThreshold1 = (int)config.secondsPerWeek - (int)config.warningThreshold1;
+            weekWarningThreshold2 = (int)config.secondsPerWeek - (int)config.warningThreshold2;
 
             timer.Every(1f, UpdateLoop);
             timer.Every(10f, SaveLoop);
@@ -321,12 +354,11 @@ namespace Oxide.Plugins
 
         private void UpdateLoop()
         {
-            int curTime;
+            int dayTime, weekTime;
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string week = WeekOfYear();
             List<string> kick = new List<string>();
 
-            //foreach (var player in players.Connected)
             foreach (var player in BasePlayer.activePlayerList)
             {
                 if (timeData[player.UserIDString, today] == null)
@@ -339,13 +371,13 @@ namespace Oxide.Plugins
                     timeData[player.UserIDString, week] = 0;
                 }
 
-                curTime = (int)timeData[player.UserIDString, today] + 1;
-                timeData[player.UserIDString, today] = curTime;
+                dayTime = (int)timeData[player.UserIDString, today] + 1;
+                timeData[player.UserIDString, today] = dayTime;
 
-                curTime = (int)timeData[player.UserIDString, week] + 1;
-                timeData[player.UserIDString, week] = curTime;
+                weekTime = (int)timeData[player.UserIDString, week] + 1;
+                timeData[player.UserIDString, week] = weekTime;
 
-                if ((config.secondsPerDay > 0 && curTime > config.secondsPerDay) || (config.secondsPerWeek > 0 && curTime > config.secondsPerWeek)) {
+                if ((config.secondsPerDay > 0 && dayTime > config.secondsPerDay) || (config.secondsPerWeek > 0 && weekTime > config.secondsPerWeek)) {
                     kick.Add(player.UserIDString);
                 }
 
@@ -364,7 +396,6 @@ namespace Oxide.Plugins
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string week = WeekOfYear();
 
-            //foreach (var player in players.Connected)
             foreach (var player in BasePlayer.activePlayerList)
             {
                 if(config.secondsPerDay > 0)
@@ -402,7 +433,6 @@ namespace Oxide.Plugins
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string week = WeekOfYear();
 
-            //foreach (var player in players.Connected)
             foreach (var player in BasePlayer.activePlayerList)
             {
                 if(config.secondsPerDay > 0)
@@ -441,7 +471,32 @@ namespace Oxide.Plugins
             Config["secondsPerWeek"] = 0;
             Config["warningThreshold1"] = 30 * 60;
             Config["warningThreshold2"] = 10 * 60;
-            ResetWarningThresholds();
+            LoadMyDefaultConfig();
+            SaveConfig();
+        }
+
+        private object CanClientLogin(Network.Connection connection)
+        {
+            int dayCount, weekCount;
+            string today = DateTime.Now.ToString("MM/dd/yyyy");
+            string week = WeekOfYear();
+            string id = connection.userid.ToString();
+
+            dayCount = (int)timeData[id, today];
+            weekCount = (int)timeData[id, week];
+            Puts(string.Format("{0} attempting to connect with {1} day seconds and {2} week seconds", connection.username, dayCount, weekCount));
+            if (config.secondsPerDay > 0 && dayCount != null && dayCount > config.secondsPerDay)
+            {
+                string error = string.Format("There is {0} remaining until the next day cycle begins.", FormatTimeSpan((long)TimeTilNextDayCycle().TotalSeconds));
+                return error;
+            }
+            else if(config.secondsPerWeek > 0 && weekCount != null && weekCount > config.secondsPerWeek)
+            {
+                string error = string.Format("There is {0} remaining until the next week cycle begins.", FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalSeconds));
+                return error;
+            }
+
+            return true;
         }
 
         private void LoadMyDefaultConfig()
@@ -460,19 +515,16 @@ namespace Oxide.Plugins
 
         private void ResetWarningThresholds()
         {
-            if((int)Config["secondsPerDay"] > 0){
-                dayWarningThreshold1 = (int)Config["secondsPerDay"] - (int)Config["warningThreshold1"];
-                dayWarningThreshold2 = (int)Config["secondsPerDay"] - (int)Config["warningThreshold2"];
+            if((int)config.secondsPerDay > 0){
+                dayWarningThreshold1 = (int)config.secondsPerDay - (int)config.warningThreshold1;
+                dayWarningThreshold2 = (int)config.secondsPerDay - (int)config.warningThreshold2;
             }
 
-            if((int)Config["secondsPerWeek"] > 0){
-                weekWarningThreshold1 = (int)Config["secondsPerWeek"] - (int)Config["warningThreshold1"];
-                weekWarningThreshold2 = (int)Config["secondsPerWeek"] - (int)Config["warningThreshold2"];
+            if((int)config.secondsPerWeek > 0){
+                weekWarningThreshold1 = (int)config.secondsPerWeek - (int)config.warningThreshold1;
+                weekWarningThreshold2 = (int)config.secondsPerWeek - (int)config.warningThreshold2;
             }
         }
-
-        // private void LoadConfigVariables() => configData = Config.ReadObject<ConfigData>();
-        // void SaveConfig(ConfigData config) => Config.WriteObject(config, true);
 
     }
 }
