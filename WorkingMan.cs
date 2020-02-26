@@ -133,6 +133,22 @@ namespace Oxide.Plugins
             }
         }
 
+        [Command("workingman.setweekstartday")]
+        private void SetWeekStartDay(IPlayer player, string command, string[] args)
+        {
+            if(player.IsAdmin)
+            {
+                try{
+                    config.dayOfWeek = Int32.Parse(args[0]);
+                    SaveConfig();
+                    player.Message(string.Format("Week start day has been updated to {0}", args[0]));
+                }
+                catch{
+                    player.Message("Error handling setweekstartday command");
+                }
+            }
+        }
+
         [Command("workingman.resetdefaults")]
         private void ResetDefaults(IPlayer player, string command, string[] args)
         {
@@ -260,7 +276,7 @@ namespace Oxide.Plugins
             int firstDayWeek = cul.Calendar.GetWeekOfYear(    
                  DateTime.Now,    
                  CalendarWeekRule.FirstDay,    
-                 DayOfWeek.Thursday);
+                 (System.DayOfWeek)config.dayOfWeek);
 
             return DateTime.Now.ToString("yyyy") + "-" + firstDayWeek.ToString();
         }
@@ -273,13 +289,13 @@ namespace Oxide.Plugins
 
         private TimeSpan TimeTilNextWeekCycle()
         {
-            TimeSpan untilMidnight = GetNextWeekday(DateTime.Today, DayOfWeek.Thursday) - DateTime.Now;
+            TimeSpan untilMidnight = GetNextWeekday(DateTime.Today, (System.DayOfWeek)config.dayOfWeek) - DateTime.Now;
             return untilMidnight;
         }
 
         private TimeSpan TimeTilNextDayCycle()
         {
-            TimeSpan untilMidnight = DateTime.Today.AddDays (1.0) - DateTime.Now;
+            TimeSpan untilMidnight = DateTime.Today.AddDays(1.0) - DateTime.Now;
             return untilMidnight;
         }
 
@@ -330,10 +346,12 @@ namespace Oxide.Plugins
             public long secondsPerWeek { get; set; }
             public long warningThreshold1 { get; set; }
             public long warningThreshold2 { get; set; }
+            public int  dayOfWeek { get; set; }
         }
 
         private void Init()
         {
+            TimeZoneInfo.ClearCachedData();
             timeData = Interface.Oxide.DataFileSystem.GetDatafile("WorkingMan/timeData");
             config = Config.ReadObject<PluginConfig>();
             dayWarningThreshold1 = (int)config.secondsPerDay- (int)config.warningThreshold1;
@@ -471,6 +489,7 @@ namespace Oxide.Plugins
             Config["secondsPerWeek"] = 0;
             Config["warningThreshold1"] = 30 * 60;
             Config["warningThreshold2"] = 10 * 60;
+            Config["dayOfWeek"] = 4; // Thursday
             LoadMyDefaultConfig();
             SaveConfig();
         }
@@ -505,6 +524,7 @@ namespace Oxide.Plugins
             config.secondsPerWeek = 0;
             config.warningThreshold1 = 30 * 60;
             config.warningThreshold2 = 10 * 60;
+            config.dayOfWeek = 4; // Thursday
             ResetWarningThresholds();
         }
 
