@@ -12,6 +12,10 @@
 
 [GUI Announcements](https://umod.org/plugins/gui-announcements)
 
+## Considerations
+
+`WorkingMan` uses your server's configured timezone for determining the daily and weekly cycle start times. Be sure your server's timezone is configured how you desire. If you update your server's timezone, you can reload the plugin to have it sync with your new timezone as well.
+
 ## Player Commands
 
 Players have just one command they can issue via chat: `/checktimer`. This will have a message sent to them specifying how much time they have played for the current cycle(s) and how much time is left until the next cycle(s).
@@ -28,6 +32,8 @@ Admin commands are all issued via the console.
 `workingman.setdaylimit <seconds>` - Updates the server's configured number of seconds allowed per day. Set this to 0 to disable the daily time limit.
 
 `workingman.setweeklimit <seconds>` - Updates the server's configured number of seconds allowed per week. Set this to 0 to disable the weekly time limit.
+
+`workingman.setweekstartday <day>` - Sets the day that the weekly cycle starts if you have a weekly time limit configured. `<day>` should be a number from 0 to 6, 0 being Sunday and 6 being Saturday. This value defaults to Thursday (4), a typical wipe day for many servers.
 
 `workingman.resetdefaults` - Resets the server's configuration to the default settings (4 hours per day, 30 minute and 10 minute warning thresholds).
 
