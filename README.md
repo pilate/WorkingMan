@@ -8,6 +8,10 @@
 
 `WorkingMan` allows you to configure your server to limit the play time of players to a certain number of seconds per day, and/or per week. It defaults to 4 hours per day and no weekly limit. Players can use their play time whenever they like during the day, each day, but when they reach their daily or weekly limit, they will be kicked from the server until the next day or week time cycle begins. Warnings are displayed to a user coming close to their time limit via server messages and GUI banner displays. Once a player's play time crosses the first warning threshold (when he has 30 minutes left, by default), he will receive a warning every 5 minutes. Once he reaches the second threshold (when he has 10 minutes left, by default), he will be warned every minute. This gives the player time to find a safe spot to log off for the rest of the cycle. A player trying to log back into the server when he has no time left in the current cycle is denied and provided with a message informing him of when the next cycle begins.
 
+## Dependencies
+
+[GUI Announcements](https://umod.org/plugins/gui-announcements)
+
 ## Player Commands
 
 Players have just one command they can issue via chat: `/checktimer`. This will have a message sent to them specifying how much time they have played for the current cycle(s) and how much time is left until the next cycle(s).
