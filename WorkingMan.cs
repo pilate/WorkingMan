@@ -24,6 +24,8 @@ namespace Oxide.Plugins
         private int dayWarningThreshold2 = 0;
         private int weekWarningThreshold1 = 0;
         private int weekWarningThreshold2 = 0;
+        private int WARNING1_INTERVAL = 300;
+        private int WARNING2_INTERVAL = 60;
 
         [Command("workingman.reset")]
         private void ResetTimer(IPlayer player, string command, string[] args)
@@ -361,8 +363,6 @@ namespace Oxide.Plugins
 
             timer.Every(1f, UpdateLoop);
             timer.Every(10f, SaveLoop);
-            timer.Every(60f, Warn2Loop);
-            timer.Every(300f, Warn1Loop);
         }
 
         private void SaveLoop()
@@ -395,6 +395,56 @@ namespace Oxide.Plugins
                 weekTime = (int)timeData[player.UserIDString, week] + 1;
                 timeData[player.UserIDString, week] = weekTime;
 
+                if(config.secondsPerDay > 0)
+                {
+                    if(dayTime >= dayWarningThreshold2)
+                    {
+                        if(dayTime % WARNING2_INTERVAL == 0)
+                        {
+                            string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
+                            FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
+                            player.ChatMessage(msg);
+                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                        }
+
+                    }
+                    else if(dayTime >= dayWarningThreshold1)
+                    {
+                        if(dayTime % WARNING1_INTERVAL == 0)
+                        {
+                            string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
+                            FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
+                            player.ChatMessage(msg);
+                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                        }
+                    }
+                }
+
+                if(config.secondsPerWeek > 0)
+                {
+                    if(weekTime >= weekWarningThreshold2)
+                    {
+                        if(weekTime % 60 == 0)
+                        {
+                            string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
+                            FormatTimeSpan(weekTime), week, FormatTimeSpan(config.secondsPerWeek - weekTime));
+                            player.ChatMessage(msg);
+                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                        }
+
+                    }
+                    else if(weekTime >= weekWarningThreshold1)
+                    {
+                        if(weekTime % 300 == 0)
+                        {
+                            string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
+                            FormatTimeSpan(weekTime), week, FormatTimeSpan(config.secondsPerWeek - weekTime));
+                            player.ChatMessage(msg);
+                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                        }
+                    }
+                }
+
                 if ((config.secondsPerDay > 0 && dayTime > config.secondsPerDay) || (config.secondsPerWeek > 0 && weekTime > config.secondsPerWeek)) {
                     kick.Add(player.UserIDString);
                 }
@@ -405,80 +455,6 @@ namespace Oxide.Plugins
             {
                 var player = covalence.Players.FindPlayer(playerId);
                 player.Kick($"Played time exceeds limit");
-            }
-        }
-
-        private void Warn2Loop()
-        {
-            int curTime;
-            string today = DateTime.Now.ToString("MM/dd/yyyy");
-            string week = WeekOfYear();
-
-            foreach (var player in BasePlayer.activePlayerList)
-            {
-                if(config.secondsPerDay > 0)
-                {
-                    curTime = (int)timeData[player.UserIDString, today];
-                    if(curTime == null)
-                        curTime = 0;
-
-                    if(curTime >= dayWarningThreshold2){
-                        string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
-                            FormatTimeSpan(curTime), today, FormatTimeSpan(config.secondsPerDay - curTime));
-                        player.ChatMessage(msg);
-                        GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                    }
-                }
-                else if(config.secondsPerWeek > 0)
-                {
-                    curTime = (int)timeData[player.UserIDString, week];
-                    if(curTime == null)
-                        curTime = 0;
-
-                    if(curTime >= weekWarningThreshold2){
-                        string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
-                            FormatTimeSpan(curTime), week, FormatTimeSpan(config.secondsPerWeek - curTime));
-                        player.ChatMessage(msg);
-                        GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                    }
-                }
-            }
-        }
-
-        private void Warn1Loop()
-        {
-            int curTime;
-            string today = DateTime.Now.ToString("MM/dd/yyyy");
-            string week = WeekOfYear();
-
-            foreach (var player in BasePlayer.activePlayerList)
-            {
-                if(config.secondsPerDay > 0)
-                {
-                    curTime = (int)timeData[player.UserIDString, today];
-                    if(curTime == null)
-                        curTime = 0;
-
-                    if(curTime >= dayWarningThreshold1 && curTime < dayWarningThreshold2){
-                        string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
-                            FormatTimeSpan(curTime), today, FormatTimeSpan(config.secondsPerDay - curTime));
-                        player.ChatMessage(msg);
-                        GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                    }
-                }
-                else if(config.secondsPerWeek > 0)
-                {
-                    curTime = (int)timeData[player.UserIDString, week];
-                    if(curTime == null)
-                        curTime = 0;
-
-                    if(curTime >= weekWarningThreshold1){
-                        string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
-                            FormatTimeSpan(curTime), week, FormatTimeSpan(config.secondsPerWeek - curTime));
-                        player.ChatMessage(msg);
-                        GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                    }
-                }
             }
         }
 
