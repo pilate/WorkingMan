@@ -19,8 +19,8 @@
 ## Configuration
 `secondsPerDay` = Number of seconds allowed per day, set to `0` to disable this limit. Default is `14400` seconds, or 4 hours.
 `secondsPerWeek` = Number of seconds allowed per week, set to `0` to disable this limit. Default is `0`.
-`warningThreshold1` = Once a player's timer has less than this many seconds, warnings are sent every 5 minutes. Defaults to `1800`, or 30 minutes.
-`warningThreshold2` = Once a player's timer has less than this many seconds, warnings are sent every minute. Defaults to `600`, or 10 minutes. 
+`warningThreshold1` = Once a player's timer has less than this many seconds left, warnings are sent every 5 minutes. Defaults to `1800`, or 30 minutes.
+`warningThreshold2` = Once a player's timer has less than this many seconds left, warnings are sent every minute. Defaults to `600`, or 10 minutes. 
 `dayOfWeek` = Zero-based index of the day of the week that the weekly cycle begins on. Defaults to `4`, or Thursday.
 
 ## Player Commands
