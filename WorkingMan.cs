@@ -10,7 +10,7 @@ using Oxide.Game.Rust.Cui;
 
 namespace Oxide.Plugins
 {
-    [Info("Working Man", "pilate/mothball187", "0.0.1")]
+    [Info("Working Man", "pilate/mothball187", "0.0.2")]
     [Description("Limit playtime per user")]
 
     class WorkingMan : CovalencePlugin
@@ -479,9 +479,18 @@ namespace Oxide.Plugins
             string week = WeekOfYear();
             string id = connection.userid.ToString();
 
+            if (timeData[id, today] == null)
+            {
+                timeData[id, today] = 0;
+            }
+
+            if (timeData[id, week] == null)
+            {
+                timeData[id, week] = 0;
+            }
+
             dayCount = (int)timeData[id, today];
             weekCount = (int)timeData[id, week];
-            Puts(string.Format("{0} attempting to connect with {1} day seconds and {2} week seconds", connection.username, dayCount, weekCount));
             if (config.secondsPerDay > 0 && dayCount != null && dayCount > config.secondsPerDay)
             {
                 string error = string.Format("There is {0} remaining until the next day cycle begins.", FormatTimeSpan((long)TimeTilNextDayCycle().TotalSeconds));
