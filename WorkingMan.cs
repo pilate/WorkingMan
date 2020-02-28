@@ -16,7 +16,7 @@ namespace Oxide.Plugins
     class WorkingMan : CovalencePlugin
     {
         [PluginReference]
-        Plugin GUIAnnouncements;
+        private Plugin GUIAnnouncements;
 
         private DynamicConfigFile timeData;
         private PluginConfig config;
@@ -404,7 +404,8 @@ namespace Oxide.Plugins
                             string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
                             FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
                             player.ChatMessage(msg);
-                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                            if(GUIAnnouncements != null)
+                                GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
                         }
 
                     }
@@ -415,7 +416,8 @@ namespace Oxide.Plugins
                             string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
                             FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
                             player.ChatMessage(msg);
-                            GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
+                            if(GUIAnnouncements != null)
+                                GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
                         }
                     }
                 }
