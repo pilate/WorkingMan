@@ -16,6 +16,13 @@
 
 `WorkingMan` uses your server's configured timezone for determining the daily and weekly cycle start times. Be sure your server's timezone is configured how you desire. If you update your server's timezone, you can reload the plugin to have it sync with your new timezone as well.
 
+## Configuration
+`secondsPerDay` = Number of seconds allowed per day, set to `0` to disable this limit. Default is `14400` seconds, or 4 hours.
+`secondsPerWeek` = Number of seconds allowed per week, set to `0` to disable this limit. Default is `0`.
+`warningThreshold1` = Once a player's timer has less than this many seconds, warnings are sent every 5 minutes. Defaults to `1800`, or 30 minutes.
+`warningThreshold2` = Once a player's timer has less than this many seconds, warnings are sent every minute. Defaults to `600`, or 10 minutes. 
+`dayOfWeek` = Zero-based index of the day of the week that the weekly cycle begins on. Defaults to `4`, or Thursday.
+
 ## Player Commands
 
 Players have just one command they can issue via chat: `/checktimer`. This will have a message sent to them specifying how much time they have played for the current cycle(s) and how much time is left until the next cycle(s).
