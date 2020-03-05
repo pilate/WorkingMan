@@ -468,6 +468,7 @@ namespace Oxide.Plugins
             Config["warningThreshold1"] = 30 * 60;
             Config["warningThreshold2"] = 10 * 60;
             Config["dayOfWeek"] = 4; // Thursday
+            config = new PluginConfig();
             LoadMyDefaultConfig();
             SaveConfig();
         }
