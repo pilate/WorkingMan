@@ -54,3 +54,12 @@ Admin commands are all issued via the console.
 
 `workingman.givetimeweek <player name or id> <seconds>` - Subtracts `<seconds>` from the designated player's weekly timer.
 
+# Server Owners
+
+Are you using, or planning to use, this plugin? Please let us know! We are interested in hearing about servers using our plugins and may even advertise them here if you are interested.
+
+# Servers 
+
+Below are a list of servers using our plugin.
+
+**Working Man's Rust** - `connect 3.20.202.204:28015` - [Discord Invite](https://discord.gg/Tde6MrG)
