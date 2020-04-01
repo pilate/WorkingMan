@@ -14,16 +14,24 @@ The [TimedProgression plugin](https://github.com/mothball187/TimedProgression), 
 
 [GUI Announcements](https://umod.org/plugins/gui-announcements)
 
+[TimeOfDay](https://umod.org/plugins/time-of-day)
+
 ## Considerations
 
 `WorkingMan` uses your server's configured timezone for determining the daily and weekly cycle start times. Be sure your server's timezone is configured how you desire. If you update your server's timezone, you can reload the plugin to have it sync with your new timezone as well.
 
 ## Configuration
 `secondsPerDay` = Number of seconds allowed per day, set to `0` to disable this limit. Default is `14400` seconds, or 4 hours.
+
 `secondsPerWeek` = Number of seconds allowed per week, set to `0` to disable this limit. Default is `0`.
+
 `warningThreshold1` = Once a player's timer has less than this many seconds left, warnings are sent every 5 minutes. Defaults to `1800`, or 30 minutes.
+
 `warningThreshold2` = Once a player's timer has less than this many seconds left, warnings are sent every minute. Defaults to `600`, or 10 minutes. 
+
 `dayOfWeek` = Zero-based index of the day of the week that the weekly cycle begins on. Defaults to `4`, or Thursday.
+
+`timeNights` = Boolean value of whether night time counts against a player's time or not (requires [TimeOfDay](https://umod.org/plugins/time-of-day) plugin).
 
 ## Player Commands
 
@@ -53,6 +61,8 @@ Admin commands are all issued via the console.
 `workingman.givetimeday <player name or id> <seconds>` - Subtracts `<seconds>` from the designated player's daily timer.
 
 `workingman.givetimeweek <player name or id> <seconds>` - Subtracts `<seconds>` from the designated player's weekly timer.
+
+`workingman.settimenights <true or false>` - Sets the config option of whether or not nights count against a player's time (requires [TimeOfDay](https://umod.org/plugins/time-of-day) plugin). 
 
 # Server Owners
 
