@@ -67,7 +67,6 @@ namespace Oxide.Plugins
                 ["PlayerDayWarning"] = "WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!",
                 ["PlayerWeekWarning"] = "WARNING: You have been playing for {0} this week ({1}), you have {2} left!",
                 ["Kick"] = "Played time exceeds limit",
-                ["NewConfig"] = "Creating a new configuration file",
                 ["LoginDay"] = "There is {0} remaining until the next day cycle begins.",
                 ["LoginWeek"] = "There is {0} remaining until the next week cycle begins."
             }, this);
@@ -93,7 +92,7 @@ namespace Oxide.Plugins
             if(!player.IsAdmin)
                 return;
 
-            string playerId = players.FindPlayer(args[0]);
+            string playerId = players.FindPlayer(args[0]).Id;
             string today = DateTime.Now.ToString("MM/dd/yyyy");
 
             if(playerId != null){
@@ -118,7 +117,7 @@ namespace Oxide.Plugins
             if(!player.IsAdmin)
                 return;
 
-            string playerId = players.FindPlayer(args[0]);
+            string playerId = players.FindPlayer(args[0]).Id;
             string week = WeekOfYear();
 
             if(playerId != null){
@@ -265,8 +264,8 @@ namespace Oxide.Plugins
                 return;
 
             string today = DateTime.Now.ToString("MM/dd/yyyy");
-            string playerId = players.FindPlayer(args[0]);
-            if(playerId != null)
+            string playerId = players.FindPlayer(args[0]).Id;
+            if(playerId == null)
             {
                 player.Message(string.Format(lang.GetMessage("GiveTimeDayError", this, player.Id), args[0]));
                 return;
@@ -290,7 +289,7 @@ namespace Oxide.Plugins
                 return;
 
             string week = WeekOfYear();
-            string playerId = players.FindPlayer(args[0]);
+            string playerId = players.FindPlayer(args[0]).Id;
             if(playerId == null)
             {
                 player.Message(string.Format(lang.GetMessage("GiveTimeWeekError", this, player.Id), args[0]));
@@ -453,7 +452,7 @@ namespace Oxide.Plugins
 
                 if(config.minutesPerDay > 0)
                 {
-                    string msg = string.Format(lang.GetMessage("PlayerDayWarning", this, player.Id), 
+                    string msg = string.Format(lang.GetMessage("PlayerDayWarning", this, player.UserIDString), 
                             FormatTimeSpan(dayTime), today, FormatTimeSpan(config.minutesPerDay - dayTime));
                     if(dayTime >= dayWarningThreshold2)
                     {
@@ -470,7 +469,7 @@ namespace Oxide.Plugins
 
                 if(config.minutesPerWeek > 0)
                 {
-                    string msg = string.Format(lang.GetMessage("PlayerWeekWarning", this, player.Id), 
+                    string msg = string.Format(lang.GetMessage("PlayerWeekWarning", this, player.UserIDString), 
                             FormatTimeSpan(weekTime), week, FormatTimeSpan(config.minutesPerWeek - weekTime));
                     if(weekTime >= weekWarningThreshold2)
                     {
@@ -485,7 +484,7 @@ namespace Oxide.Plugins
                     }
                 }
 
-                if ((config.minutesPerDay > 0 && dayTime > config.minutesPerDay) || (config.minutesPerWeek > 0 && weekTime > config.minutesPerWeek)) {
+                if ((config.minutesPerDay > 0 && dayTime >= config.minutesPerDay) || (config.minutesPerWeek > 0 && weekTime >= config.minutesPerWeek)) {
                     kick.Add(player.UserIDString);
                 }
 
@@ -494,13 +493,13 @@ namespace Oxide.Plugins
             foreach(string playerId in kick)
             {
                 var player = covalence.Players.FindPlayer(playerId);
-                player.Kick(lang.GetMessage("Kick", this, player.Id));
+                player.Kick(lang.GetMessage("Kick", this, playerId));
             }
         }
 
         protected override void LoadDefaultConfig()
         {
-            LogWarning(lang.GetMessage("NewConfig", this, player.Id));
+            LogWarning("Creating a new configuration file");
             config = new PluginConfig();
             config.minutesPerDay = 6 * 60; //6 hours
             config.minutesPerWeek = 0;
@@ -527,14 +526,14 @@ namespace Oxide.Plugins
 
             dayCount = (int)timeData[id, today];
             weekCount = (int)timeData[id, week];
-            if (config.minutesPerDay > 0 && dayCount != null && dayCount > config.minutesPerDay)
+            if (config.minutesPerDay > 0 && dayCount != null && dayCount >= config.minutesPerDay)
             {
-                string error = string.Format(lang.GetMessage("LoginDay", this, player.Id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes));
+                string error = string.Format(lang.GetMessage("LoginDay", this, id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes));
                 return error;
             }
-            else if(config.minutesPerWeek > 0 && weekCount != null && weekCount > config.minutesPerWeek)
+            else if(config.minutesPerWeek > 0 && weekCount != null && weekCount >= config.minutesPerWeek)
             {
-                string error = string.Format(lang.GetMessage("LoginWeek", this, player.Id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes));
+                string error = string.Format(lang.GetMessage("LoginWeek", this, id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes));
                 return error;
             }
 
