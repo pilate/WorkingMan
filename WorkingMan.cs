@@ -24,262 +24,328 @@ namespace Oxide.Plugins
         private int dayWarningThreshold2 = 0;
         private int weekWarningThreshold1 = 0;
         private int weekWarningThreshold2 = 0;
-        private int WARNING1_INTERVAL = 300;
-        private int WARNING2_INTERVAL = 60;
-        private bool isDay = true;
+        private int WARNING1_INTERVAL = 5;
+        private int WARNING2_INTERVAL = 1;
+        private bool countTime = true;
+
+        protected override void LoadDefaultMessages()
+        {
+            lang.RegisterMessages(new Dictionary<string, string>
+            {
+                ["Reset"] = "Your timer has been reset for {0} and week {1}",
+                ["ResetError"] = "Error handling reset command",
+                ["SetDayTimer"] = "{0} day timer has been set to {1}",
+                ["SetDayTimerError"] = "Could not find player with name {0}",
+                ["SetDayTimerError2"] = "Error handling setdaytimer command",
+                ["SetWeekTimer"] = "{0} week timer has been set to {1} minutes for the week of {2}",
+                ["SetWeekTimerError"] = "Could not find player with name {0}",
+                ["SetWeekTimerError2"] = "Error handling setweektimer command",
+                ["SetDayLimit"] = "Time limit has been set to {0} minutes per day",
+                ["SetDayLimitError"] = "Error handling setdaylimit command",
+                ["SetWeekLimit"] = "Time limit has been set to {0} minutes per week",
+                ["SetWeekLimitError"] = "Error handling setweeklimit command",
+                ["SetWeekStartDay"] = "Week start day has been updated to {0}",
+                ["SetWeekStartDayError"] = "Error handling setweekstartday command",
+                ["SetTimeNights"] = "Time nights option set to {0}",
+                ["SetTimeNightsError"] = "Error handling settimenights command",
+                ["ResetDefaults"] = "Default config reloaded",
+                ["SetWarn1"] = "Warning threshold 1 has been set to {0} minutes",
+                ["SetWarn1Error"] = "Error handling setwarn1 command",
+                ["SetWarn2"] = "Warning threshold 2 has been set to {0} minutes",
+                ["SetWarn2Error"] = "Error handling setwarn2 command",
+                ["GiveTimeDay"] = "{0} has been given {1} minutes for {2}",
+                ["GiveTimeDayError"] = "Could not find player with name {0}",
+                ["GiveTimeDayError2"] = "Error handling givetimeday command",
+                ["GiveTimeWeek"] = "{0} has been given {1} minutes for week {2}",
+                ["GiveTimeWeekError"] = "Could not find player with name {0}",
+                ["GiveTimeWeekError2"] = "Error handling givetimeweek command",
+                ["CheckTimer1"] = "You have been playing for {0} in this 24-hour period ({1}), you have {2} left.",
+                ["CheckTimer2"] = "There is {0} remaining until the next day cycle begins.",
+                ["CheckTimer3"] = "You have been playing for {0} this week ({1}), you have {2} left.",
+                ["CheckTimer4"] = "There is {0} remaining until the next week cycle begins.",
+                ["CheckTimerError"] = "Error handling checktimer command",
+                ["PlayerDayWarning"] = "WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!",
+                ["PlayerWeekWarning"] = "WARNING: You have been playing for {0} this week ({1}), you have {2} left!",
+                ["Kick"] = "Played time exceeds limit",
+                ["NewConfig"] = "Creating a new configuration file",
+                ["LoginDay"] = "There is {0} remaining until the next day cycle begins.",
+                ["LoginWeek"] = "There is {0} remaining until the next week cycle begins."
+            }, this);
+        }
 
         [Command("workingman.reset")]
         private void ResetTimer(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
-            {
-                try{
-                    string today = DateTime.Now.ToString("MM/dd/yyyy");
-                    string week = WeekOfYear();
-                    timeData[player.Id, today] = 0;
-                    timeData[player.Id, week] = 0;
-                    player.Message(string.Format("Your timer has been reset for {0} and week {1}", today, week));
-                }
-                catch{
-                    player.Message("Error handling reset command");
-                }
-            }
-            else
-            {
-                player.Message("This command is restricted to admins only");
-            }
+            if(!player.IsAdmin)
+                return;
+
+            string today = DateTime.Now.ToString("MM/dd/yyyy");
+            string week = WeekOfYear();
+            timeData[player.Id, today] = 0;
+            timeData[player.Id, week] = 0;
+            player.Message(string.Format(lang.GetMessage("Reset", this, player.Id), today, week));
+           
         }
 
         [Command("workingman.setdaytimer")]
         private void SetDayTimer(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
-            {
-                try{
-                    string playerId = FindPlayerIDByName(args[0]);
-                    string today = DateTime.Now.ToString("MM/dd/yyyy");
+            if(!player.IsAdmin)
+                return;
 
-                    if(playerId != null){
-                        timeData[playerId, today] = Int32.Parse(args[1]);
-                        player.Message(string.Format("{0} day timer has been set to {1}", args[0], args[1]));
-                    }
-                    else
-                        player.Message(string.Format("Could not find player with name {0}", args[0]));
+            string playerId = players.FindPlayer(args[0]);
+            string today = DateTime.Now.ToString("MM/dd/yyyy");
+
+            if(playerId != null){
+                Int32 time;
+                if(!Int32.TryParse(args[1], out time))
+                {
+                    player.Message(lang.GetMessage("SetDayTimerError2", this, player.Id));
+                    return;
                 }
-                catch{
-                    player.Message("Error handling setdaytimer command");
-                }
+
+                timeData[playerId, today] = time;
+                player.Message(string.Format(lang.GetMessage("SetDayTimer", this, player.Id), args[0], args[1]));
             }
             else
-            {
-                player.Message("This command is restricted to admins only");
-            }
+                player.Message(string.Format(lang.GetMessage("SetDayTimerError", this, player.Id), args[0]));
+
         }
 
         [Command("workingman.setweektimer")]
         private void SetWeekTimer(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
-            {
-                try{
-                    string playerId = FindPlayerIDByName(args[0]);
-                    string week = WeekOfYear();
+            if(!player.IsAdmin)
+                return;
 
-                    if(playerId != null){
-                        timeData[playerId, week] = Int32.Parse(args[1]);
-                        player.Message(string.Format("{0} week timer has been set to {1} for the week of {2}", args[0], args[1], week));
-                    }
-                    else
-                        player.Message(string.Format("Could not find player with name {0}", args[0]));
+            string playerId = players.FindPlayer(args[0]);
+            string week = WeekOfYear();
+
+            if(playerId != null){
+                Int32 time;
+                if(!Int32.TryParse(args[1], out time))
+                {
+                    player.Message(lang.GetMessage("SetWeekTimerError2", this, player.Id));
+                    return;
                 }
-                catch{
-                    player.Message("Error handling setweektimer command");
-                }
+
+                timeData[playerId, week] = time;
+                player.Message(string.Format(lang.GetMessage("SetWeekTimer", this, player.Id), args[0], args[1], week));
             }
             else
-            {
-                player.Message("This command is restricted to admins only");
-            }
+                player.Message(string.Format(lang.GetMessage("SetWeekTimerError", this, player.Id), args[0]));
         }
 
         [Command("workingman.setdaylimit")]
         private void SetDayLimit(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            Int32 limit;
+            if(!Int32.TryParse(args[0], out limit))
             {
-                try{
-                    config.secondsPerDay = Int32.Parse(args[0]);
-                    SaveConfig();
-                    ResetWarningThresholds();
-                    player.Message(string.Format("Time limit has been set to {0} seconds per day", args[0]));
-                }
-                catch{
-                    player.Message("Error handling setlimit command");
-                }
+                player.Message(lang.GetMessage("SetDayLimitError", this, player.Id));
+                return;
             }
+
+            config.minutesPerDay = limit;
+            SaveConfig();
+            ResetWarningThresholds();
+            player.Message(string.Format(lang.GetMessage("SetDayLimit", this, player.Id), args[0]));
         }
 
         [Command("workingman.setweeklimit")]
         private void SetWeekLimit(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            Int32 limit;
+            if(!Int32.TryParse(args[0], out limit))
             {
-                try{
-                    config.secondsPerWeek = Int32.Parse(args[0]);
-                    SaveConfig();
-                    ResetWarningThresholds();
-                    player.Message(string.Format("Time limit has been set to {0} seconds per week", args[0]));
-                }
-                catch{
-                    player.Message("Error handling setlimit command");
-                }
+                player.Message(lang.GetMessage("SetWeekLimitError", this, player.Id));
+                return;
             }
+
+            config.minutesPerWeek = limit;
+            SaveConfig();
+            ResetWarningThresholds();
+            player.Message(string.Format(lang.GetMessage("SetWeekLimit", this, player.Id), args[0]));
         }
 
         [Command("workingman.setweekstartday")]
         private void SetWeekStartDay(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            Int32 weekday;
+            if(!Int32.TryParse(args[0], out weekday))
             {
-                try{
-                    config.dayOfWeek = Int32.Parse(args[0]);
-                    SaveConfig();
-                    player.Message(string.Format("Week start day has been updated to {0}", args[0]));
-                }
-                catch{
-                    player.Message("Error handling setweekstartday command");
-                }
+                player.Message(lang.GetMessage("SetWeekStartDayError", this, player.Id));
+                return;
             }
+
+            config.dayOfWeek = weekday;
+            SaveConfig();
+            player.Message(string.Format(lang.GetMessage("SetWeekStartDay", this, player.Id), args[0]));
+        }
+
+        [Command("workingman.settimenights")]
+        private void SetTimeNights(IPlayer player, string command, string[] args)
+        {
+            if(!player.IsAdmin)
+                return;
+
+            bool timeNights;
+            if(!Boolean.TryParse(args[0], out timeNights))
+            {
+                player.Message(lang.GetMessage("SetTimeNightsError", this, player.Id));
+                return;
+            }
+
+            config.timeNights = timeNights;
+            SaveConfig();
+            player.Message(string.Format(lang.GetMessage("SetTimeNights", this, player.Id), timeNights));    
         }
 
         [Command("workingman.resetdefaults")]
         private void ResetDefaults(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
-            {
-                LoadMyDefaultConfig();
-                SaveConfig();
-                player.Message("Default config reloaded");
-            }
+            if(!player.IsAdmin)
+                return;
+
+            LoadDefaultConfig();
+            player.Message(lang.GetMessage("ResetDefaults", this, player.Id));
         }
 
         [Command("workingman.setwarn1")]
         private void SetWarningThreshold1(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            Int32 warn;
+            if(!Int32.TryParse(args[0], out warn))
             {
-                try{
-                    config.warningThreshold1 = Int32.Parse(args[0]);
-                    SaveConfig();
-                    ResetWarningThresholds();
-                    player.Message(string.Format("Warning threshold 1 has been set to {0} seconds", args[0]));
-                }
-                catch{
-                    player.Message("Error handling setwarn1 command");
-                }
+                player.Message(lang.GetMessage("SetWarn1Error", this, player.Id));
+                return;
             }
+
+            config.warningThreshold1 = warn;
+            SaveConfig();
+            ResetWarningThresholds();
+            player.Message(string.Format(lang.GetMessage("SetWarn1", this, player.Id), args[0]));
         }
 
         [Command("workingman.setwarn2")]
         private void SetWarningThreshold2(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            Int32 threshold;
+            if(!Int32.TryParse(args[0], out threshold))
             {
-                try{
-                    config.warningThreshold2 = Int32.Parse(args[0]);
-                    SaveConfig();
-                    ResetWarningThresholds();
-                    player.Message(string.Format("Warning threshold 2 has been set to {0} seconds", args[0]));
-                }
-                catch{
-                    player.Message("Error handling setwarn2 command");
-                }
+                player.Message(lang.GetMessage("SetWarn2Error", this, player.Id));
+                return;
             }
+
+            config.warningThreshold2 = threshold;
+            SaveConfig();
+            ResetWarningThresholds();
+            player.Message(string.Format(lang.GetMessage("SetWarn2", this, player.Id), args[0]));
         }
 
         [Command("workingman.givetimeday")]
         private void GiveTimeDay(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            string today = DateTime.Now.ToString("MM/dd/yyyy");
+            string playerId = players.FindPlayer(args[0]);
+            if(playerId != null)
             {
-                try{
-                    string today = DateTime.Now.ToString("MM/dd/yyyy");
-                    string playerId = FindPlayerIDByName(args[0]);
-                    if(playerId != null){
-                        timeData[playerId, today] = (int)timeData[playerId, today] - Int32.Parse(args[1]);
-                        player.Message(string.Format("{0} has been given {1} seconds for {2}", args[0], args[1], today));
-                    }
-                    else
-                        player.Message(string.Format("Could not find player with name {0}", args[0]));
-                }
-                catch{
-                    player.Message("Error handling givetime command");
-                }
+                player.Message(string.Format(lang.GetMessage("GiveTimeDayError", this, player.Id), args[0]));
+                return;
             }
-            else
+
+            Int32 time;
+            if(!Int32.TryParse(args[1], out time))
             {
-                player.Message("This command is restricted to admins only");
+                player.Message(lang.GetMessage("GiveTimeDayError2", this, player.Id));
+                return;
             }
+
+            timeData[playerId, today] = (int)timeData[playerId, today] - time;
+            player.Message(string.Format(lang.GetMessage("GiveTimeDay", this, player.Id), args[0], args[1], today));
         }
 
         [Command("workingman.givetimeweek")]
         private void GiveTimeWeek(IPlayer player, string command, string[] args)
         {
-            if(player.IsAdmin)
+            if(!player.IsAdmin)
+                return;
+
+            string week = WeekOfYear();
+            string playerId = players.FindPlayer(args[0]);
+            if(playerId == null)
             {
-                try{
-                    string week = WeekOfYear();
-                    string playerId = FindPlayerIDByName(args[0]);
-                    if(playerId != null){
-                        timeData[playerId, week] = (int)timeData[playerId, week] - Int32.Parse(args[1]);
-                        player.Message(string.Format("{0} has been given {1} seconds for {2}", args[0], args[1], week));
-                    }
-                    else
-                        player.Message(string.Format("Could not find player with name {0}", args[0]));
-                }
-                catch{
-                    player.Message("Error handling givetime command");
-                }
+                player.Message(string.Format(lang.GetMessage("GiveTimeWeekError", this, player.Id), args[0]));
+                return;
             }
-            else
+
+            Int32 time;
+            if(!Int32.TryParse(args[1], out time))
             {
-                player.Message("This command is restricted to admins only");
+                player.Message(lang.GetMessage("GiveTimeWeekError2", this, player.Id));
+                return;
             }
+
+            timeData[playerId, week] = (int)timeData[playerId, week] - time;
+            player.Message(string.Format(lang.GetMessage("GiveTimeWeek", this, player.Id), args[0], args[1], week));
         }
 
         [Command("checktimer")]
         private void CheckTimer(IPlayer player, string command, string[] args)
         {
-            try{
-                string today = DateTime.Now.ToString("MM/dd/yyyy");
-                string week = WeekOfYear();
+            string today = DateTime.Now.ToString("MM/dd/yyyy");
+            string week = WeekOfYear();
 
-                if(config.secondsPerDay > 0){
-                    player.Message(string.Format("You have been playing for {0} in this 24-hour period ({1}), you have {2} left.", 
-                        FormatTimeSpan((int)timeData[player.Id, today]), today, FormatTimeSpan(config.secondsPerDay - (int)timeData[player.Id, today])));
-                    player.Message(string.Format("There is {0} remaining until the next day cycle begins.", FormatTimeSpan((long)TimeTilNextDayCycle().TotalSeconds)));
-                }
-
-                if(config.secondsPerWeek > 0){
-                    player.Message(string.Format("You have been playing for {0} this week ({1}), you have {2} left.", 
-                        FormatTimeSpan((int)timeData[player.Id, week]), week, FormatTimeSpan(config.secondsPerWeek - (int)timeData[player.Id, week])));
-                    player.Message(string.Format("There is {0} remaining until the next week cycle begins.", FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalSeconds)));
-                }
-            }
-            catch{
-                player.Message("Error handling checktimer command");
+            if(config.minutesPerDay > 0){
+                player.Message(string.Format(lang.GetMessage("CheckTimer1", this, player.Id), 
+                    FormatTimeSpan((int)timeData[player.Id, today]), today, FormatTimeSpan(config.minutesPerDay - (int)timeData[player.Id, today])));
+                player.Message(string.Format(lang.GetMessage("CheckTimer2", this, player.Id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes)));
             }
 
+            if(config.minutesPerWeek > 0){
+                player.Message(string.Format(lang.GetMessage("CheckTimer3", this, player.Id), 
+                    FormatTimeSpan((int)timeData[player.Id, week]), week, FormatTimeSpan(config.minutesPerWeek - (int)timeData[player.Id, week])));
+                player.Message(string.Format(lang.GetMessage("CheckTimer4", this, player.Id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes)));
+            }
         }
 
         private void OnTimeSunset()
         {
-            isDay = false;
+            if(!(bool)config.timeNights)
+                countTime = false;
         }
 
         private void OnTimeSunrise()
         {
-            isDay = true;
+            countTime = true;
+        }
+
+        private void Unload()
+        {
+            timeData.Save();
+        }
+
+        private void OnServerSave()
+        {
+            timeData.Save();
         }
 
         private string WeekOfYear()
@@ -312,54 +378,33 @@ namespace Oxide.Plugins
             return untilMidnight;
         }
 
-        private string FindPlayerIDByName(string name)
+        private string FormatTimeSpan(long minutes)
         {
-            ulong userID;
-            if (name.Length == 17 && ulong.TryParse(name, out userID))
-                return name;
-
-            var players = covalence.Players.FindPlayers(name).ToList();
-            if(players.Count > 1)
-            {
-                return null;
-            }
-
-            if(players.Count == 1)
-            {
-                return players[0].Id;
-            }
-
-            return null;
-        }
-
-        private string FormatTimeSpan(long seconds)
-        {
-            TimeSpan t = TimeSpan.FromSeconds( seconds );
-            string answer = string.Format("{0:D2}h:{1:D2}m:{2:D2}s", 
+            TimeSpan t = TimeSpan.FromMinutes( minutes );
+            string answer = string.Format("{0:D2}h:{1:D2}m", 
                 t.Hours, 
-                t.Minutes, 
-                t.Seconds);
+                t.Minutes);
             return answer;
         }
 
-        private string FormatTimeSpan2(long seconds)
+        private string FormatTimeSpan2(long minutes)
         {
-            TimeSpan t = TimeSpan.FromSeconds( seconds );
-            string answer = string.Format("{0:D2}d:{1:D2}h:{2:D2}m:{3:D2}s",
+            TimeSpan t = TimeSpan.FromMinutes( minutes );
+            string answer = string.Format("{0:D2}d:{1:D2}h:{2:D2}m",
                 t.Days, 
                 t.Hours, 
-                t.Minutes, 
-                t.Seconds);
+                t.Minutes);
             return answer;
         }
 
         class PluginConfig
         {
-            public long secondsPerDay { get; set; }
-            public long secondsPerWeek { get; set; }
+            public long minutesPerDay { get; set; }
+            public long minutesPerWeek { get; set; }
             public long warningThreshold1 { get; set; }
             public long warningThreshold2 { get; set; }
             public int  dayOfWeek { get; set; }
+            public bool timeNights { get; set; }
         }
 
         private void Init()
@@ -367,22 +412,26 @@ namespace Oxide.Plugins
             TimeZoneInfo.ClearCachedData();
             timeData = Interface.Oxide.DataFileSystem.GetDatafile("WorkingMan/timeData");
             config = Config.ReadObject<PluginConfig>();
-            dayWarningThreshold1 = (int)config.secondsPerDay- (int)config.warningThreshold1;
-            dayWarningThreshold2 = (int)config.secondsPerDay - (int)config.warningThreshold2;
-            weekWarningThreshold1 = (int)config.secondsPerWeek - (int)config.warningThreshold1;
-            weekWarningThreshold2 = (int)config.secondsPerWeek - (int)config.warningThreshold2;
+            dayWarningThreshold1 = (int)config.minutesPerDay - (int)config.warningThreshold1;
+            dayWarningThreshold2 = (int)config.minutesPerDay - (int)config.warningThreshold2;
+            weekWarningThreshold1 = (int)config.minutesPerWeek - (int)config.warningThreshold1;
+            weekWarningThreshold2 = (int)config.minutesPerWeek - (int)config.warningThreshold2;
 
-            timer.Every(1f, UpdateLoop);
-            timer.Every(10f, SaveLoop);
+            timer.Every(60f, UpdateLoop);
         }
 
-        private void SaveLoop()
+        private void MsgPlayer(BasePlayer player, string msg)
         {
-            timeData.Save();
+            player.ChatMessage(msg);
+            if(GUIAnnouncements != null)
+                GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
         }
 
         private void UpdateLoop()
         {
+            if(!countTime)
+                return;
+
             int dayTime, weekTime;
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string week = WeekOfYear();
@@ -391,78 +440,53 @@ namespace Oxide.Plugins
             foreach (var player in BasePlayer.activePlayerList)
             {
                 if (timeData[player.UserIDString, today] == null)
-                {
                     timeData[player.UserIDString, today] = 0;
-                }
 
                 if (timeData[player.UserIDString, week] == null)
-                {
                     timeData[player.UserIDString, week] = 0;
+
+                dayTime = (int)timeData[player.UserIDString, today] + 1;
+                timeData[player.UserIDString, today] = dayTime;
+
+                weekTime = (int)timeData[player.UserIDString, week] + 1;
+                timeData[player.UserIDString, week] = weekTime;
+
+                if(config.minutesPerDay > 0)
+                {
+                    string msg = string.Format(lang.GetMessage("PlayerDayWarning", this, player.Id), 
+                            FormatTimeSpan(dayTime), today, FormatTimeSpan(config.minutesPerDay - dayTime));
+                    if(dayTime >= dayWarningThreshold2)
+                    {
+                        if(dayTime % WARNING2_INTERVAL == 0)
+                            MsgPlayer(player, msg);
+
+                    }
+                    else if(dayTime >= dayWarningThreshold1)
+                    {
+                        if(dayTime % WARNING1_INTERVAL == 0)
+                            MsgPlayer(player, msg);
+                    }
                 }
 
-                if(isDay)
+                if(config.minutesPerWeek > 0)
                 {
-                    dayTime = (int)timeData[player.UserIDString, today] + 1;
-                    timeData[player.UserIDString, today] = dayTime;
-
-                    weekTime = (int)timeData[player.UserIDString, week] + 1;
-                    timeData[player.UserIDString, week] = weekTime;
-
-                    if(config.secondsPerDay > 0)
+                    string msg = string.Format(lang.GetMessage("PlayerWeekWarning", this, player.Id), 
+                            FormatTimeSpan(weekTime), week, FormatTimeSpan(config.minutesPerWeek - weekTime));
+                    if(weekTime >= weekWarningThreshold2)
                     {
-                        if(dayTime >= dayWarningThreshold2)
-                        {
-                            if(dayTime % WARNING2_INTERVAL == 0)
-                            {
-                                string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
-                                FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
-                                player.ChatMessage(msg);
-                                if(GUIAnnouncements != null)
-                                    GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                            }
+                        if(weekTime % WARNING2_INTERVAL == 0)
+                            MsgPlayer(player, msg);
 
-                        }
-                        else if(dayTime >= dayWarningThreshold1)
-                        {
-                            if(dayTime % WARNING1_INTERVAL == 0)
-                            {
-                                string msg = string.Format("WARNING: You have been playing for {0} in this 24-hour period ({1}), you have {2} left!", 
-                                FormatTimeSpan(dayTime), today, FormatTimeSpan(config.secondsPerDay - dayTime));
-                                player.ChatMessage(msg);
-                                if(GUIAnnouncements != null)
-                                    GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                            }
-                        }
                     }
-
-                    if(config.secondsPerWeek > 0)
+                    else if(weekTime >= weekWarningThreshold1)
                     {
-                        if(weekTime >= weekWarningThreshold2)
-                        {
-                            if(weekTime % 60 == 0)
-                            {
-                                string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
-                                FormatTimeSpan(weekTime), week, FormatTimeSpan(config.secondsPerWeek - weekTime));
-                                player.ChatMessage(msg);
-                                GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                            }
-
-                        }
-                        else if(weekTime >= weekWarningThreshold1)
-                        {
-                            if(weekTime % 300 == 0)
-                            {
-                                string msg = string.Format("WARNING: You have been playing for {0} this week ({1}), you have {2} left!", 
-                                FormatTimeSpan(weekTime), week, FormatTimeSpan(config.secondsPerWeek - weekTime));
-                                player.ChatMessage(msg);
-                                GUIAnnouncements?.Call("CreateAnnouncement", msg, "Purple", "Yellow", player);
-                            }
-                        }
+                        if(weekTime % WARNING1_INTERVAL == 0)
+                            MsgPlayer(player, msg);
                     }
+                }
 
-                    if ((config.secondsPerDay > 0 && dayTime > config.secondsPerDay) || (config.secondsPerWeek > 0 && weekTime > config.secondsPerWeek)) {
-                        kick.Add(player.UserIDString);
-                    }
+                if ((config.minutesPerDay > 0 && dayTime > config.minutesPerDay) || (config.minutesPerWeek > 0 && weekTime > config.minutesPerWeek)) {
+                    kick.Add(player.UserIDString);
                 }
 
             }
@@ -470,20 +494,21 @@ namespace Oxide.Plugins
             foreach(string playerId in kick)
             {
                 var player = covalence.Players.FindPlayer(playerId);
-                player.Kick($"Played time exceeds limit");
+                player.Kick(lang.GetMessage("Kick", this, player.Id));
             }
         }
 
         protected override void LoadDefaultConfig()
         {
-            LogWarning("Creating a new configuration file");
-            Config["secondsPerDay"] = 14400;
-            Config["secondsPerWeek"] = 0;
-            Config["warningThreshold1"] = 30 * 60;
-            Config["warningThreshold2"] = 10 * 60;
-            Config["dayOfWeek"] = 4; // Thursday
+            LogWarning(lang.GetMessage("NewConfig", this, player.Id));
             config = new PluginConfig();
-            LoadMyDefaultConfig();
+            config.minutesPerDay = 6 * 60; //6 hours
+            config.minutesPerWeek = 0;
+            config.warningThreshold1 = 30;
+            config.warningThreshold2 = 10;
+            config.dayOfWeek = 4; // Thursday
+            config.timeNights = true;
+            ResetWarningThresholds();
             SaveConfig();
         }
 
@@ -495,39 +520,25 @@ namespace Oxide.Plugins
             string id = connection.userid.ToString();
 
             if (timeData[id, today] == null)
-            {
                 timeData[id, today] = 0;
-            }
 
             if (timeData[id, week] == null)
-            {
                 timeData[id, week] = 0;
-            }
 
             dayCount = (int)timeData[id, today];
             weekCount = (int)timeData[id, week];
-            if (config.secondsPerDay > 0 && dayCount != null && dayCount > config.secondsPerDay)
+            if (config.minutesPerDay > 0 && dayCount != null && dayCount > config.minutesPerDay)
             {
-                string error = string.Format("There is {0} remaining until the next day cycle begins.", FormatTimeSpan((long)TimeTilNextDayCycle().TotalSeconds));
+                string error = string.Format(lang.GetMessage("LoginDay", this, player.Id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes));
                 return error;
             }
-            else if(config.secondsPerWeek > 0 && weekCount != null && weekCount > config.secondsPerWeek)
+            else if(config.minutesPerWeek > 0 && weekCount != null && weekCount > config.minutesPerWeek)
             {
-                string error = string.Format("There is {0} remaining until the next week cycle begins.", FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalSeconds));
+                string error = string.Format(lang.GetMessage("LoginWeek", this, player.Id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes));
                 return error;
             }
 
             return true;
-        }
-
-        private void LoadMyDefaultConfig()
-        {
-            config.secondsPerDay = 14400;
-            config.secondsPerWeek = 0;
-            config.warningThreshold1 = 30 * 60;
-            config.warningThreshold2 = 10 * 60;
-            config.dayOfWeek = 4; // Thursday
-            ResetWarningThresholds();
         }
 
         private void SaveConfig()
@@ -537,14 +548,14 @@ namespace Oxide.Plugins
 
         private void ResetWarningThresholds()
         {
-            if((int)config.secondsPerDay > 0){
-                dayWarningThreshold1 = (int)config.secondsPerDay - (int)config.warningThreshold1;
-                dayWarningThreshold2 = (int)config.secondsPerDay - (int)config.warningThreshold2;
+            if((int)config.minutesPerDay > 0){
+                dayWarningThreshold1 = (int)config.minutesPerDay - (int)config.warningThreshold1;
+                dayWarningThreshold2 = (int)config.minutesPerDay - (int)config.warningThreshold2;
             }
 
-            if((int)config.secondsPerWeek > 0){
-                weekWarningThreshold1 = (int)config.secondsPerWeek - (int)config.warningThreshold1;
-                weekWarningThreshold2 = (int)config.secondsPerWeek - (int)config.warningThreshold2;
+            if((int)config.minutesPerWeek > 0){
+                weekWarningThreshold1 = (int)config.minutesPerWeek - (int)config.warningThreshold1;
+                weekWarningThreshold2 = (int)config.minutesPerWeek - (int)config.warningThreshold2;
             }
         }
 
