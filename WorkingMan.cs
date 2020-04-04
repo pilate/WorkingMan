@@ -10,7 +10,7 @@ using Oxide.Game.Rust.Cui;
 
 namespace Oxide.Plugins
 {
-    [Info("Working Man", "pilate/mothball187", "0.0.3")]
+    [Info("Working Man", "pilate/mothball187", "0.0.4")]
     [Description("Limit playtime per user")]
 
     class WorkingMan : CovalencePlugin
