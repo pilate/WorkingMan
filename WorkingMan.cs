@@ -68,7 +68,8 @@ namespace Oxide.Plugins
                 ["PlayerWeekWarning"] = "WARNING: You have been playing for {0} this week ({1}), you have {2} left!",
                 ["Kick"] = "Played time exceeds limit",
                 ["LoginDay"] = "There is {0} remaining until the next day cycle begins.",
-                ["LoginWeek"] = "There is {0} remaining until the next week cycle begins."
+                ["LoginWeek"] = "There is {0} remaining until the next week cycle begins.",
+                ["NotAdmin"] = "You must be an admin to use this command."
             }, this);
         }
 
@@ -76,13 +77,16 @@ namespace Oxide.Plugins
         private void ResetTimer(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string week = WeekOfYear();
             timeData[player.Id, today] = 0;
             timeData[player.Id, week] = 0;
-            player.Message(string.Format(lang.GetMessage("Reset", this, player.Id), today, week));
+            player.Reply(string.Format(lang.GetMessage("Reset", this, player.Id), today, week));
            
         }
 
@@ -90,7 +94,10 @@ namespace Oxide.Plugins
         private void SetDayTimer(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             string playerId = players.FindPlayer(args[0]).Id;
             string today = DateTime.Now.ToString("MM/dd/yyyy");
@@ -99,15 +106,15 @@ namespace Oxide.Plugins
                 Int32 time;
                 if(!Int32.TryParse(args[1], out time))
                 {
-                    player.Message(lang.GetMessage("SetDayTimerError2", this, player.Id));
+                    player.Reply(lang.GetMessage("SetDayTimerError2", this, player.Id));
                     return;
                 }
 
                 timeData[playerId, today] = time;
-                player.Message(string.Format(lang.GetMessage("SetDayTimer", this, player.Id), args[0], args[1]));
+                player.Reply(string.Format(lang.GetMessage("SetDayTimer", this, player.Id), args[0], args[1]));
             }
             else
-                player.Message(string.Format(lang.GetMessage("SetDayTimerError", this, player.Id), args[0]));
+                player.Reply(string.Format(lang.GetMessage("SetDayTimerError", this, player.Id), args[0]));
 
         }
 
@@ -115,7 +122,10 @@ namespace Oxide.Plugins
         private void SetWeekTimer(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             string playerId = players.FindPlayer(args[0]).Id;
             string week = WeekOfYear();
@@ -124,187 +134,214 @@ namespace Oxide.Plugins
                 Int32 time;
                 if(!Int32.TryParse(args[1], out time))
                 {
-                    player.Message(lang.GetMessage("SetWeekTimerError2", this, player.Id));
+                    player.Reply(lang.GetMessage("SetWeekTimerError2", this, player.Id));
                     return;
                 }
 
                 timeData[playerId, week] = time;
-                player.Message(string.Format(lang.GetMessage("SetWeekTimer", this, player.Id), args[0], args[1], week));
+                player.Reply(string.Format(lang.GetMessage("SetWeekTimer", this, player.Id), args[0], args[1], week));
             }
             else
-                player.Message(string.Format(lang.GetMessage("SetWeekTimerError", this, player.Id), args[0]));
+                player.Reply(string.Format(lang.GetMessage("SetWeekTimerError", this, player.Id), args[0]));
         }
 
         [Command("workingman.setdaylimit")]
         private void SetDayLimit(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             Int32 limit;
             if(!Int32.TryParse(args[0], out limit))
             {
-                player.Message(lang.GetMessage("SetDayLimitError", this, player.Id));
+                player.Reply(lang.GetMessage("SetDayLimitError", this, player.Id));
                 return;
             }
 
             config.minutesPerDay = limit;
             SaveConfig();
             ResetWarningThresholds();
-            player.Message(string.Format(lang.GetMessage("SetDayLimit", this, player.Id), args[0]));
+            player.Reply(string.Format(lang.GetMessage("SetDayLimit", this, player.Id), args[0]));
         }
 
         [Command("workingman.setweeklimit")]
         private void SetWeekLimit(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             Int32 limit;
             if(!Int32.TryParse(args[0], out limit))
             {
-                player.Message(lang.GetMessage("SetWeekLimitError", this, player.Id));
+                player.Reply(lang.GetMessage("SetWeekLimitError", this, player.Id));
                 return;
             }
 
             config.minutesPerWeek = limit;
             SaveConfig();
             ResetWarningThresholds();
-            player.Message(string.Format(lang.GetMessage("SetWeekLimit", this, player.Id), args[0]));
+            player.Reply(string.Format(lang.GetMessage("SetWeekLimit", this, player.Id), args[0]));
         }
 
         [Command("workingman.setweekstartday")]
         private void SetWeekStartDay(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             Int32 weekday;
             if(!Int32.TryParse(args[0], out weekday))
             {
-                player.Message(lang.GetMessage("SetWeekStartDayError", this, player.Id));
+                player.Reply(lang.GetMessage("SetWeekStartDayError", this, player.Id));
                 return;
             }
 
             config.dayOfWeek = weekday;
             SaveConfig();
-            player.Message(string.Format(lang.GetMessage("SetWeekStartDay", this, player.Id), args[0]));
+            player.Reply(string.Format(lang.GetMessage("SetWeekStartDay", this, player.Id), args[0]));
         }
 
         [Command("workingman.settimenights")]
         private void SetTimeNights(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             bool timeNights;
             if(!Boolean.TryParse(args[0], out timeNights))
             {
-                player.Message(lang.GetMessage("SetTimeNightsError", this, player.Id));
+                player.Reply(lang.GetMessage("SetTimeNightsError", this, player.Id));
                 return;
             }
 
             config.timeNights = timeNights;
             SaveConfig();
-            player.Message(string.Format(lang.GetMessage("SetTimeNights", this, player.Id), timeNights));    
+            player.Reply(string.Format(lang.GetMessage("SetTimeNights", this, player.Id), timeNights));    
         }
 
         [Command("workingman.resetdefaults")]
         private void ResetDefaults(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             LoadDefaultConfig();
-            player.Message(lang.GetMessage("ResetDefaults", this, player.Id));
+            player.Reply(lang.GetMessage("ResetDefaults", this, player.Id));
         }
 
         [Command("workingman.setwarn1")]
         private void SetWarningThreshold1(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             Int32 warn;
             if(!Int32.TryParse(args[0], out warn))
             {
-                player.Message(lang.GetMessage("SetWarn1Error", this, player.Id));
+                player.Reply(lang.GetMessage("SetWarn1Error", this, player.Id));
                 return;
             }
 
             config.warningThreshold1 = warn;
             SaveConfig();
             ResetWarningThresholds();
-            player.Message(string.Format(lang.GetMessage("SetWarn1", this, player.Id), args[0]));
+            player.Reply(string.Format(lang.GetMessage("SetWarn1", this, player.Id), args[0]));
         }
 
         [Command("workingman.setwarn2")]
         private void SetWarningThreshold2(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             Int32 threshold;
             if(!Int32.TryParse(args[0], out threshold))
             {
-                player.Message(lang.GetMessage("SetWarn2Error", this, player.Id));
+                player.Reply(lang.GetMessage("SetWarn2Error", this, player.Id));
                 return;
             }
 
             config.warningThreshold2 = threshold;
             SaveConfig();
             ResetWarningThresholds();
-            player.Message(string.Format(lang.GetMessage("SetWarn2", this, player.Id), args[0]));
+            player.Reply(string.Format(lang.GetMessage("SetWarn2", this, player.Id), args[0]));
         }
 
         [Command("workingman.givetimeday")]
         private void GiveTimeDay(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             string today = DateTime.Now.ToString("MM/dd/yyyy");
             string playerId = players.FindPlayer(args[0]).Id;
             if(playerId == null)
             {
-                player.Message(string.Format(lang.GetMessage("GiveTimeDayError", this, player.Id), args[0]));
+                player.Reply(string.Format(lang.GetMessage("GiveTimeDayError", this, player.Id), args[0]));
                 return;
             }
 
             Int32 time;
             if(!Int32.TryParse(args[1], out time))
             {
-                player.Message(lang.GetMessage("GiveTimeDayError2", this, player.Id));
+                player.Reply(lang.GetMessage("GiveTimeDayError2", this, player.Id));
                 return;
             }
 
             timeData[playerId, today] = (int)timeData[playerId, today] - time;
-            player.Message(string.Format(lang.GetMessage("GiveTimeDay", this, player.Id), args[0], args[1], today));
+            player.Reply(string.Format(lang.GetMessage("GiveTimeDay", this, player.Id), args[0], args[1], today));
         }
 
         [Command("workingman.givetimeweek")]
         private void GiveTimeWeek(IPlayer player, string command, string[] args)
         {
             if(!player.IsAdmin)
+            {
+                player.Reply(lang.GetMessage("NotAdmin", this, player.Id));
                 return;
+            }
 
             string week = WeekOfYear();
             string playerId = players.FindPlayer(args[0]).Id;
             if(playerId == null)
             {
-                player.Message(string.Format(lang.GetMessage("GiveTimeWeekError", this, player.Id), args[0]));
+                player.Reply(string.Format(lang.GetMessage("GiveTimeWeekError", this, player.Id), args[0]));
                 return;
             }
 
             Int32 time;
             if(!Int32.TryParse(args[1], out time))
             {
-                player.Message(lang.GetMessage("GiveTimeWeekError2", this, player.Id));
+                player.Reply(lang.GetMessage("GiveTimeWeekError2", this, player.Id));
                 return;
             }
 
             timeData[playerId, week] = (int)timeData[playerId, week] - time;
-            player.Message(string.Format(lang.GetMessage("GiveTimeWeek", this, player.Id), args[0], args[1], week));
+            player.Reply(string.Format(lang.GetMessage("GiveTimeWeek", this, player.Id), args[0], args[1], week));
         }
 
         [Command("checktimer")]
@@ -314,15 +351,15 @@ namespace Oxide.Plugins
             string week = WeekOfYear();
 
             if(config.minutesPerDay > 0){
-                player.Message(string.Format(lang.GetMessage("CheckTimer1", this, player.Id), 
+                player.Reply(string.Format(lang.GetMessage("CheckTimer1", this, player.Id), 
                     FormatTimeSpan((int)timeData[player.Id, today]), today, FormatTimeSpan(config.minutesPerDay - (int)timeData[player.Id, today])));
-                player.Message(string.Format(lang.GetMessage("CheckTimer2", this, player.Id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes)));
+                player.Reply(string.Format(lang.GetMessage("CheckTimer2", this, player.Id), FormatTimeSpan((long)TimeTilNextDayCycle().TotalMinutes)));
             }
 
             if(config.minutesPerWeek > 0){
-                player.Message(string.Format(lang.GetMessage("CheckTimer3", this, player.Id), 
+                player.Reply(string.Format(lang.GetMessage("CheckTimer3", this, player.Id), 
                     FormatTimeSpan((int)timeData[player.Id, week]), week, FormatTimeSpan(config.minutesPerWeek - (int)timeData[player.Id, week])));
-                player.Message(string.Format(lang.GetMessage("CheckTimer4", this, player.Id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes)));
+                player.Reply(string.Format(lang.GetMessage("CheckTimer4", this, player.Id), FormatTimeSpan2((long)TimeTilNextWeekCycle().TotalMinutes)));
             }
         }
 
@@ -492,7 +529,7 @@ namespace Oxide.Plugins
 
             foreach(string playerId in kick)
             {
-                var player = covalence.Players.FindPlayer(playerId);
+                var player = players.FindPlayerById(playerId);
                 player.Kick(lang.GetMessage("Kick", this, playerId));
             }
         }
