@@ -548,7 +548,7 @@ namespace Oxide.Plugins
             SaveConfig();
         }
 
-        private object CanClientLogin(Network.Connection connection)
+        private object CanUserLogin(Network.Connection connection)
         {
             int dayCount, weekCount;
             string today = DateTime.Now.ToString("MM/dd/yyyy");
@@ -574,7 +574,7 @@ namespace Oxide.Plugins
                 return error;
             }
 
-            return true;
+			return null;
         }
 
         private void SaveConfig()
